@@ -1,15 +1,16 @@
-var coh_fac = 0.1;//0.5;
-var sep_fac = 0.1;//1;
-var flo_fac = - 0.1;//1;
-var ali_fac = 0.1;//1;
-var boid_personal_space = 3;
+function Boid_letter(x, y, dia) {
+  var coh_fac = 0.1;
+  var sek_fac = 0.1;
+  var flo_fac = 1;
+  var ali_fac = 1;
+  var boid_personal_space = 20;
 
-function Boid(x, y, dia) {
   this.pos = createVector(x, y);
+  this.init_pos = this.pos.copy();
   this.vel = createVector(0, 0);
   this.acc = createVector(0, 0);
   this.dia = dia;
-  this.maxspeed = 1;// + random() * 0.5;
+  this.maxspeed = 1 + random() * 0.1;
   this.maxforce = 1;
 
   this.applyForce = function(force) {
@@ -31,7 +32,7 @@ function Boid(x, y, dia) {
     }
   }
 
-  this.applyBehaviour = function(boids, flow) {
+/*  this.applyBehaviour = function(boids, flow) {
     this.wrap();
     var steering = this.follow(flow).mult(flo_fac);
     steering.add(this.align(boids).mult(ali_fac));
@@ -39,6 +40,24 @@ function Boid(x, y, dia) {
     steering.add(this.cohesion(boids).mult(coh_fac))
     steering.limit(this.maxforce);
     this.applyForce(steering);
+  }
+*/
+
+  this.applyBehavior = function(boids, flow, n) {
+    // var steering = this.seek(this.init_pos).mult(sek_fac);
+    // steering.add(this.cohesion(boids_letters).mult(coh_fac));
+    // steering.add(this.follow_this(flow.index(n)).mult(flo_fac));
+    var steering = this.follow(flow);//this.follow_this(flow.index(n)).mult(flo_fac);
+    steering.limit(this.maxforce);
+    this.applyForce(steering);
+  }
+
+  this.follow_this = function(i) {
+    var desired = flow.get(i);
+    desired.setMag(this.maxspeed);
+    var steering = p5.Vector.sub(desired, this.vel);
+    steering.limit(this.maxforce);
+    return (steering);
   }
 
   this.follow = function(flow) {
@@ -48,8 +67,6 @@ function Boid(x, y, dia) {
     var steering = p5.Vector.sub(desired, this.vel);
     steering.limit(this.maxforce);
     return (steering);
-    this.applyForce(steering);
-    //this.applyForce(flow.get(this.pos.x, this.pos.y));
   }
 
   this.seek = function(target) {

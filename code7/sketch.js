@@ -10,7 +10,7 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(90, 160 + 54);
+  createCanvas(90, 160 + img_name.height);
   boids = [];
   var i = 0;
   while (i <= n) {
@@ -33,7 +33,7 @@ function draw() {
   //       flow.new();
   //     }
   fill(0, 5);
-  rect(0, 0, width, height-54);
+  rect(0, 0, width, height - img_name.height);
   // background(0);
   var i = 0;
   while (i <= n) {

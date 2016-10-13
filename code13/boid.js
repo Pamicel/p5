@@ -1,19 +1,38 @@
-var coh_fac = 0.1;//0.5;
-var sep_fac = 0.1;//1;
-var flo_fac = - 0.1;//1;
-var ali_fac = 0.1;//1;
-var boid_personal_space = 3;
-
 function Boid(x, y, dia) {
+  var coh_fac = 0.1;//0.5;
+  var sep_fac = 0.1;//1;
+  var flo_fac = - 0.1;//1;
+  var ali_fac = 0.1;//1;
+  var boid_personal_space = dia * 3;
+
   this.pos = createVector(x, y);
+  this.anker = this.pos.copy();
   this.vel = createVector(0, 0);
   this.acc = createVector(0, 0);
   this.dia = dia;
-  this.maxspeed = 1;// + random() * 0.5;
+  this.maxspeed = 1 + random() * 0.1;
   this.maxforce = 1;
 
   this.applyForce = function(force) {
     this.acc.add(force);
+  }
+
+  this.vertical_lock = function() {
+    this.vel.x = 0;
+    this.acc.x = 0;
+  }
+
+  this.friction = function() {
+    this.applyForce(p5.Vector.mult(this.vel, -0.08));
+  }
+
+  this.gravity = function(intensity) {
+    this.applyForce(createVector(0, intensity));
+  }
+
+  this.calculate_steering = function(desired) {
+    var steering = p5.Vector.sub(desired, this.vel);
+    return (steering);
   }
 
   this.wrap = function() {
@@ -37,19 +56,25 @@ function Boid(x, y, dia) {
     steering.add(this.align(boids).mult(ali_fac));
     steering.add(this.seperate(boids).mult(sep_fac));
     steering.add(this.cohesion(boids).mult(coh_fac))
+    this.applySteering(steering);
+  }
+
+  this.applySteering = function(steering) {
     steering.limit(this.maxforce);
     this.applyForce(steering);
+  }
+
+  this.follow_this = function(i) {
+    var desired = flow.get(i);
+    desired.setMag(this.maxspeed);
+    return (this.calculate_steering(desired));
   }
 
   this.follow = function(flow) {
     //this.wrap();
     var desired = flow.get(this.pos.x, this.pos.y);
     desired.setMag(this.maxspeed);
-    var steering = p5.Vector.sub(desired, this.vel);
-    steering.limit(this.maxforce);
-    return (steering);
-    this.applyForce(steering);
-    //this.applyForce(flow.get(this.pos.x, this.pos.y));
+    return (this.calculate_steering(desired));
   }
 
   this.seek = function(target) {
@@ -61,9 +86,7 @@ function Boid(x, y, dia) {
     else {
       desired.setMag(this.maxspeed);
     }
-    var steering = p5.Vector.sub(desired, this.vel);
-    steering.limit(this.maxforce);
-    return (steering);
+    return (this.calculate_steering(desired));
   }
 
   this.align = function(boids) {
@@ -82,9 +105,7 @@ function Boid(x, y, dia) {
     if (count) {
       desired.div(count);
       desired.limit(this.maxspeed);
-      var steering = p5.Vector.sub(desired, this.vel);
-      steering.limit(this.maxforce);
-      return (steering);
+      return (this.calculate_steering(desired));
     }
     else {
       return (desired);
@@ -92,7 +113,7 @@ function Boid(x, y, dia) {
   }
 
   this.seperate = function(boids) {
-    var sum = createVector(0, 0);
+    var desired = createVector(0, 0);
     var neighbourhood = this.dia * boid_personal_space;
     var count = 0;
     var d;
@@ -103,21 +124,21 @@ function Boid(x, y, dia) {
         var diff = p5.Vector.sub(this.pos, boids[i].pos);
         diff.normalize();
         diff.div(d);
-        sum.add(diff);
+        desired.add(diff);
         count++;
       }
     }
     if (count) {
-      sum.div(count).limit(this.maxspeed);
-      return (p5.Vector.sub(sum, this.vel).limit(this.maxforce));
+      desired.div(count).limit(this.maxspeed);
+      return (this.calculate_steering(desired));
     }
     else {
-      return (sum);
+      return (desired);
     }
   }
 
   this.cohesion = function(boids) {
-    var sum = createVector(0, 0);
+    var desired = createVector(0, 0);
     var neighbourhood = this.dia * boid_personal_space;
     var count = 0;
     var d;
@@ -125,18 +146,26 @@ function Boid(x, y, dia) {
     for (var i = 0; i < boids.length; i++) {
       d = p5.Vector.dist(this.pos, boids[i].pos);
       if (d > 0 && d < neighbourhood) {
-        sum.add(boids[i].pos);
+        desired.add(boids[i].pos);
         count++;
       }
     }
     if (count) {
-      sum.div(count);
-      return (this.seek(sum));
+      desired.div(count);
+      return (this.seek(desired));
     }
     else {
-      return (sum);
+      return (desired);
     }
   }
+
+
+
+this.spring = function(anker, spring_l, spring_k) {
+  var f = p5.Vector.sub(anker, this.pos);
+  var dist = f.mag();
+  this.applyForce(f.setMag(0.01 * spring_k * (dist - spring_l)));
+}
 
   this.update = function() {
     this.vel.add(this.acc);

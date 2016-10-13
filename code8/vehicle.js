@@ -9,7 +9,7 @@ function Boid(x, y, dia) {
   this.vel = createVector(0, 0);
   this.acc = createVector(0, 0);
   this.dia = dia;
-  this.maxspeed = 1;// + random() * 0.5;
+  this.maxspeed = 1 + random() * 0.1;
   this.maxforce = 1;
 
   this.applyForce = function(force) {
